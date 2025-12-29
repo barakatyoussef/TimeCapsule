@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes Time Capsules{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1>🎁 Mes Capsules Temporelles</h1>
+
+    {# LE VIDEUR : On vérifie si l'utilisateur a confirmé son email #}
+    {% if app.user and not app.user.isVerified %}
+
+        <div class="alert alert-warning text-center mt-5">
+            <h4>📧 Vérification requise !</h4>
+            <p>Merci de votre inscription.</p>
+            <p>Pour voir et créer des capsules, vous devez d'abord <strong>cliquer sur le lien</strong> reçu par email.</p>
+            <p class="small text-muted">Vérifiez vos spams si vous ne voyez rien.</p>
+        </div>
+
+    {% else %}
+
+        {# S'il est vérifié (ou s'il n'y a pas de contrainte), on affiche le tableau #}
+
+        <div class="text-end mb-3">
+            <a href="{{ path('app_capsule_new') }}" class="btn btn-primary">Créer une nouvelle capsule</a>
+        </div>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Titre</th>
+                    <th>Date d'envoi</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for capsule in capsules %}
+                <tr>
+                    <td>{{ capsule.title }}</td>
+                    <td>{{ capsule.sendDate ? capsule.sendDate|date('Y-m-d H:i') : '' }}</td>
+                    <td>
+                        {% if capsule.isSent %}
+                            <span class="badge bg-success">Envoyée</span>
+                        {% else %}
+                            <span class="badge bg-secondary">En attente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ path('app_capsule_show', {'id': capsule.id}) }}" class="btn btn-sm btn-info">Voir</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="text-center">Vous n'avez aucune capsule pour le moment.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+    {% endif %}
+</div>
+{% endblock %}
