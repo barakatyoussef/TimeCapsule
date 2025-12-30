@@ -52,24 +52,44 @@ class SendCapsulesCommand extends Command
         foreach ($capsules as $capsule) {
             $io->text("Envoi de la capsule ID " . $capsule->getId() . " vers " . $capsule->getTargetEmail());
 
-            // 2. Créer l'email
-            $email = (new Email())
-                ->from('admin@timecapsule.com') // L'adresse d'envoi (sera remplacée par ton Gmail automatiquement)
-                ->to($capsule->getTargetEmail())
-                ->subject('⏳ Une capsule temporelle vient de s\'ouvrir : ' . $capsule->getTitle())
-                ->text($capsule->getContent()) // Version texte simple
-                ->html('
-                    <h1>⏳ Time Capsule Arrivée !</h1>
-                    <p>Bonjour,</p>
-                    <p>Quelqu\'un a voulu vous envoyer un message depuis le passé.</p>
-                    <hr>
-                    <h3>' . $capsule->getTitle() . '</h3>
-                    <p>' . nl2br($capsule->getContent()) . '</p>
-                    <hr>
-                    <p><small>Envoyé via TimeCapsule App</small></p>
-                ');
+            // ... dans la boucle foreach ...
 
-            // 3. Envoyer
+            $email = (new Email())
+                ->from('admin@timecapsule.com')
+                ->to($capsule->getTargetEmail())
+                ->subject('⏳ Une capsule temporelle vient de s\'ouvrir !');
+
+            // 1. Préparer le contenu HTML
+            $htmlContent = '
+                <h1>⏳ Time Capsule Arrivée !</h1>
+                <p>Bonjour,</p>
+                <p>Quelqu\'un a voulu vous envoyer un message depuis le passé.</p>
+                <hr>
+                <h3>' . $capsule->getTitle() . '</h3>
+                <p>' . nl2br($capsule->getContent()) . '</p>';
+
+            // 2. Si y a une image, on l'attache physiquement au mail
+            if ($capsule->getImageFilename()) {
+                // Chemin complet sur ton disque (C:/laragon/...)
+                $imagePath = 'public/uploads/' . $capsule->getImageFilename();
+
+                // On donne un ID unique à l'image pour le mail
+                $cid = 'image-capsule-' . $capsule->getId();
+
+                // On l'attache (Embed)
+                $email->embedFromPath($imagePath, $cid);
+
+                // On l'affiche avec "cid:" (Content-ID)
+                $htmlContent .= '<br><img src="cid:' . $cid . '" style="max-width:100%; border-radius:10px;" alt="Souvenir"><br>';
+            }
+
+            $htmlContent .= '<hr><p><small>Envoyé via TimeCapsule App</small></p>';
+
+            // 3. On injecte le tout
+            $email->html($htmlContent);
+
+
+            // 4. Envoyer
             try {
                 $this->mailer->send($email);
 

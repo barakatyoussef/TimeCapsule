@@ -1,6 +1,7 @@
 <?php
 
 use App\Kernel;
+date_default_timezone_set('Africa/Casablanca');
 
 require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
 

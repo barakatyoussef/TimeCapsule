@@ -18,9 +18,53 @@
 
     {% else %}
 
-        {# S'il est vérifié (ou s'il n'y a pas de contrainte), on affiche le tableau #}
+        {# ======================================================= #}
+        {# 1. LE DASHBOARD (Compte à rebours) - MAINTENANT ICI !   #}
+        {# ======================================================= #}
+        {% if nextCapsule %}
+            <div class="card mb-4 border-primary shadow-sm mt-4">
+                <div class="card-body text-center bg-light">
+                    <h4 class="text-primary"><i class="fas fa-hourglass-half"></i> Prochain Voyage Temporel</h4>
 
-        <div class="text-end mb-3">
+                    <p class="lead mt-3">
+                        La capsule <strong>"{{ nextCapsule.title }}"</strong> décollera vers
+                        <em>{{ nextCapsule.targetEmail }}</em> le :
+                    </p>
+
+                    <div class="display-6 fw-bold text-dark">
+                        {{ nextCapsule.sendDate|date('d/m/Y') }} à {{ nextCapsule.sendDate|date('H:i') }}
+                    </div>
+
+                    <p class="text-muted mt-2" id="countdown-text">Calcul du temps restant...</p>
+
+                    <script>
+                        var targetDate = new Date("{{ nextCapsule.sendDate|date('Y-m-d H:i:s') }}").getTime();
+
+                        var x = setInterval(function() {
+                            var now = new Date().getTime();
+                            var distance = targetDate - now;
+
+                            var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+                            if (distance < 0) {
+                                clearInterval(x);
+                                document.getElementById("countdown-text").innerHTML = "🚀 Décollage imminent !";
+                            } else {
+                                document.getElementById("countdown-text").innerHTML =
+                                    "⏱️ Décollage dans : " + days + "j " + hours + "h " + minutes + "m ";
+                            }
+                        }, 1000);
+                    </script>
+                </div>
+            </div>
+        {% endif %}
+        {# ======================================================= #}
+
+
+        {# 2. LE TABLEAU DES CAPSULES #}
+        <div class="text-end mb-3 mt-4">
             <a href="{{ path('app_capsule_new') }}" class="btn btn-primary">Créer une nouvelle capsule</a>
         </div>
 
@@ -47,6 +91,16 @@
                     </td>
                     <td>
                         <a href="{{ path('app_capsule_show', {'id': capsule.id}) }}" class="btn btn-sm btn-info">Voir</a>
+
+                        {% if not capsule.isSent %}
+                            <a href="{{ path('app_capsule_edit', {'id': capsule.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
+                            <form method="post" action="{{ path('app_capsule_delete', {'id': capsule.id}) }}" style="display: inline-block" onsubmit="return confirm('Vraiment supprimer ?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ capsule.id) }}">
+                                <button class="btn btn-sm btn-danger">Supprimer</button>
+                            </form>
+                        {% else %}
+                            <span class="text-muted small">🔒 Verrouillé</span>
+                        {% endif %}
                     </td>
                 </tr>
             {% else %}

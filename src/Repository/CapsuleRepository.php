@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\User;
 use App\Entity\Capsule;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,28 +17,21 @@ class CapsuleRepository extends ServiceEntityRepository
         parent::__construct($registry, Capsule::class);
     }
 
-    //    /**
-    //     * @return Capsule[] Returns an array of Capsule objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    // ... à l'intérieur de la classe CapsuleRepository
 
-    //    public function findOneBySomeField($value): ?Capsule
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    public function findNextCapsule(User $user): ?Capsule
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.author = :user')
+            ->andWhere('c.isSent = :sent')
+            // On veut seulement celles dans le futur (ou maintenant)
+            ->andWhere('c.sendDate > :now')
+            ->setParameter('user', $user)
+            ->setParameter('sent', false)
+            ->setParameter('now', new \DateTimeImmutable())
+            ->orderBy('c.sendDate', 'ASC') // La plus proche d'abord
+            ->setMaxResults(1) // Une seule
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

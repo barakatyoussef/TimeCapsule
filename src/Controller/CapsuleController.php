@@ -11,73 +11,79 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 #[Route('/capsule')]
 final class CapsuleController extends AbstractController
 {
     #[Route('/', name: 'app_capsule_index', methods: ['GET'])]
-    public function index(CapsuleRepository $capsuleRepository, Security $security): Response
+    public function index(CapsuleRepository $capsuleRepository): Response
     {
-        // 1. Récupérer l'utilisateur connecté
-        $user = $security->getUser();
+        $user = $this->getUser();
 
-        // 2. Sécurité supplémentaire : Si pas connecté, direction Login
         if (!$user) {
             return $this->redirectToRoute('app_login');
         }
 
-        // 3. LA CLE DU SUCCES : On ne cherche que les capsules de l'AUTEUR connecté
-        // Avant c'était findAll(), maintenant c'est findBy(['author' => $user])
+        $capsules = $capsuleRepository->findBy(['author' => $user]);
+        $nextCapsule = $capsuleRepository->findNextCapsule($user);
+
         return $this->render('capsule/index.html.twig', [
-            'capsules' => $capsuleRepository->findBy(['author' => $user]),
+            'capsules' => $capsules,
+            'nextCapsule' => $nextCapsule,
         ]);
     }
 
     #[Route('/new', name: 'app_capsule_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager, Security $security): Response
+    // 👇 J'ai ajouté CapsuleRepository ici pour que ça marche !
+    public function new(Request $request, EntityManagerInterface $entityManager, Security $security, CapsuleRepository $capsuleRepository): Response
     {
-        $user = $security->getUser(); // Récupérer l'utilisateur connecté
+        $user = $security->getUser();
 
-        // 1. COMPTER LES CAPSULES D'AUJOURD'HUI
-        // On crée une date de début (ce matin à 00:00:00) et de fin (ce soir à 23:59:59)
-        $todayStart = new \DateTimeImmutable('today midnight');
-        $todayEnd = new \DateTimeImmutable('tomorrow midnight -1 second');
-
-        // On compte en base de données
-        $dailyCount = $entityManager->getRepository(Capsule::class)->count([
-            'author' => $user,
-            'createdAt' => $todayStart, // Note : Il faudra affiner la requête repository pour être précis sur l'intervalle,
-            // mais pour simplifier ici, on va juste compter toutes celles créées.
-        ]);
-
-        // Pour faire propre, utilisons une requête personnalisée plus tard.
-        // Pour l'instant, simple vérification PHP sur la collection de l'user :
-        $count = 0;
-        foreach ($user->getCapsules() as $c) {
-            if ($c->getCreatedAt() >= $todayStart && $c->getCreatedAt() <= $todayEnd) {
-                $count++;
-            }
+        if (!$user) {
+            return $this->redirectToRoute('app_login');
         }
 
-        if ($count >= 5) {
-            $this->addFlash('danger', 'Oula ! Tu as déjà créé 5 capsules aujourd\'hui. Reviens demain !');
+        // --- VERIFICATION DES 5 CAPSULES / JOUR ---
+
+        // 1. On définit "Aujourd'hui à 00h00:00"
+        $todayMidnight = new \DateTime('today midnight');
+
+        // 2. On compte combien de capsules cet utilisateur a fait DEPUIS minuit
+        $todaysCapsules = $capsuleRepository->createQueryBuilder('c')
+            ->select('count(c.id)')
+            ->where('c.author = :user')
+            ->andWhere('c.createdAt >= :date') // Seulement celles créées APRES minuit
+            ->setParameter('user', $user)
+            ->setParameter('date', $todayMidnight)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // 3. Si c'est 5 ou plus, on bloque
+        if ($todaysCapsules >= 5) {
+            $this->addFlash('error', 'Oula ! Tu as déjà créé 5 capsules aujourd\'hui. Reviens demain !');
             return $this->redirectToRoute('app_capsule_index');
         }
 
-        // --- FIN DE LA LOGIQUE DE VERIFICATION ---
+        // --- FIN DE LA VERIFICATION ---
 
         $capsule = new Capsule();
+        $capsule->setTargetEmail($user->getEmail());
         $form = $this->createForm(CapsuleType::class, $capsule);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $capsule->setAuthor($user); // On attache l'auteur automatiquement
+            $capsule->setAuthor($user);
             $capsule->setCreatedAt(new \DateTimeImmutable());
-            $capsule->setIsSent(false); // Par défaut, elle n'est pas envoyée
+            $capsule->setIsSent(false);
+
+            $this->handleImageUpload($form, $capsule);
 
             $entityManager->persist($capsule);
             $entityManager->flush();
 
+            $this->addFlash('success', 'Capsule créée avec succès !');
             return $this->redirectToRoute('app_capsule_index', [], Response::HTTP_SEE_OTHER);
         }
 
@@ -87,7 +93,8 @@ final class CapsuleController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_capsule_show', methods: ['GET'])]
+    // 👉 MODIFICATION ICI : On oblige l'ID à être un nombre (\d+)
+    #[Route('/{id}', name: 'app_capsule_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(Capsule $capsule): Response
     {
         return $this->render('capsule/show.html.twig', [
@@ -95,15 +102,18 @@ final class CapsuleController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'app_capsule_edit', methods: ['GET', 'POST'])]
+    // 👉 MODIFICATION ICI AUSSI
+    #[Route('/{id}/edit', name: 'app_capsule_edit', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
     public function edit(Request $request, Capsule $capsule, EntityManagerInterface $entityManager): Response
     {
         $form = $this->createForm(CapsuleType::class, $capsule);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $this->handleImageUpload($form, $capsule);
             $entityManager->flush();
 
+            $this->addFlash('success', 'Capsule modifiée !');
             return $this->redirectToRoute('app_capsule_index', [], Response::HTTP_SEE_OTHER);
         }
 
@@ -113,7 +123,8 @@ final class CapsuleController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_capsule_delete', methods: ['POST'])]
+    // 👉 ET MODIFICATION ICI ENFIN
+    #[Route('/{id}', name: 'app_capsule_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function delete(Request $request, Capsule $capsule, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete' . $capsule->getId(), $request->getPayload()->getString('_token'))) {
@@ -122,5 +133,26 @@ final class CapsuleController extends AbstractController
         }
 
         return $this->redirectToRoute('app_capsule_index', [], Response::HTTP_SEE_OTHER);
+    }
+
+    private function handleImageUpload($form, Capsule $capsule): void
+    {
+        /** @var UploadedFile $imageFile */
+        $imageFile = $form->get('imageFile')->getData();
+
+        if ($imageFile) {
+            $originalFilename = pathinfo($imageFile->getClientOriginalName(), PATHINFO_FILENAME);
+            $newFilename = 'image_' . uniqid() . '.' . $imageFile->guessExtension();
+
+            try {
+                $imageFile->move(
+                    $this->getParameter('kernel.project_dir') . '/public/uploads',
+                    $newFilename
+                );
+                $capsule->setImageFilename($newFilename);
+            } catch (FileException $e) {
+                // Erreur silencieuse
+            }
+        }
     }
 }

@@ -1,4 +1,71 @@
 {{ form_start(form) }}
-    {{ form_widget(form) }}
-    <button class="btn">{{ button_label|default('Save') }}</button>
+
+    <div class="mb-3">
+        {{ form_label(form.title) }}
+        {{ form_widget(form.title, {'attr': {'class': 'form-control'}}) }}
+        {{ form_errors(form.title) }}
+    </div>
+
+    <div class="mb-3">
+        {{ form_label(form.content) }}
+        {{ form_widget(form.content, {'attr': {'class': 'form-control', 'rows': 5}}) }}
+        {{ form_errors(form.content) }}
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            {{ form_label(form.sendDate) }}
+            {{ form_widget(form.sendDate, {'attr': {'class': 'form-control'}}) }}
+        </div>
+        <div class="col-md-6 mb-3">
+            {{ form_label(form.targetEmail) }}
+            {{ form_widget(form.targetEmail, {'attr': {'class': 'form-control'}}) }}
+        </div>
+    </div>
+
+    {# --- ZONE IMAGE --- #}
+    <div class="card p-3 mb-4 bg-light border">
+        <h5 class="card-title">📸 Photo souvenir (Optionnel)</h5>
+
+        {# Le champ d'upload avec l'événement onchange #}
+        {{ form_widget(form.imageFile, {'attr': {'onchange': 'previewImage(event)', 'class': 'form-control'}}) }}
+        {{ form_errors(form.imageFile) }}
+
+        <div class="mt-3 text-center">
+            {# 1. Si on est en mode EDIT et qu'il y a déjà une image #}
+            {% if capsule is defined and capsule.imageFilename %}
+                <p class="text-muted small mb-1">Image actuelle :</p>
+                <img id="image-preview"
+                     src="{{ asset('uploads/' ~ capsule.imageFilename) }}"
+                     alt="Aperçu"
+                     style="max-height: 250px; border-radius: 8px; border: 2px solid #ccc;">
+
+            {# 2. Sinon (Mode NEW ou pas d'image), on met une balise cachée #}
+            {% else %}
+                <img id="image-preview"
+                     src="#"
+                     alt="Aperçu"
+                     style="display: none; max-height: 250px; border-radius: 8px; border: 2px solid #ccc;">
+            {% endif %}
+        </div>
+    </div>
+    {# ------------------ #}
+
+    <button class="btn btn-primary w-100 py-2">{{ button_label|default('Sauvegarder la capsule') }}</button>
+
 {{ form_end(form) }}
+
+{# Script JS pour afficher l'image dès qu'on la choisit #}
+<script>
+    function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function(){
+            var output = document.getElementById('image-preview');
+            output.src = reader.result;
+            output.style.display = 'block';
+        };
+        if (event.target.files[0]) {
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    }
+</script>

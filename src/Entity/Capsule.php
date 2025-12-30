@@ -6,6 +6,7 @@ use App\Repository\CapsuleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+
 #[ORM\Entity(repositoryClass: CapsuleRepository::class)]
 class Capsule
 {
@@ -138,5 +139,11 @@ class Capsule
         $this->author = $author;
 
         return $this;
+    }
+
+    // 👉 C'EST CETTE FONCTION QUI MANQUAIT POUR EASYADMIN !
+    public function __toString(): string
+    {
+        return $this->title ?? 'Capsule sans titre';
     }
 }
