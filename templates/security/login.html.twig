@@ -15,15 +15,24 @@
     {% endif %}
 
     <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+
     <label for="inputEmail">Email</label>
     <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control" autocomplete="email" required autofocus>
-    <label for="inputPassword">Password</label>
-    <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password" required>
-    <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+
+    <label for="inputPassword">Mot de passe</label>
+    <div class="input-group mb-3">
+        <input type="password" name="_password" id="inputPassword" class="form-control" autocomplete="current-password" required>
+
+        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+            <i class="fas fa-eye"></i>
+        </button>
+    </div>
+
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
     <div class="checkbox mb-3">
         <label>
-            <input type="checkbox" name="_remember_me"> Remember me
+            <input type="checkbox" name="_remember_me"> Se souvenir de moi
         </label>
     </div>
 
@@ -31,4 +40,29 @@
         Sign in
     </button>
 </form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButton = document.getElementById('togglePassword');
+        const passwordField = document.getElementById('inputPassword');
+
+        if (toggleButton && passwordField) {
+            toggleButton.addEventListener('click', function() {
+                // On vérifie le type actuel (password ou text)
+                const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordField.setAttribute('type', type);
+
+                // On change l'icône
+                const icon = this.querySelector('i');
+                if (type === 'text') {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

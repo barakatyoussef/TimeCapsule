@@ -56,4 +56,11 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::section('Site Web');
         yield MenuItem::linkToRoute('Retour au site', 'fas fa-arrow-left', 'app_home');
     }
+
+    #[Route('/', name: 'app_home')]
+    public function retour(): Response
+    {
+        // Redirige vers la page de capsules (ou login)
+        return $this->redirectToRoute('app_capsule_index');
+    }
 }

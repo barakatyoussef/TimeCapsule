@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="row align-items-center min-vh-75">
+    <div class="col-lg-6 mb-5">
+        <span class="badge bg-light text-primary border border-primary mb-3 px-3 py-2 rounded-pill">
+            🚀 Voyage temporel v1.0
+        </span>
+        <h1 class="display-4 fw-bold mb-4" style="line-height: 1.2;">
+            Écrivez aujourd'hui,<br>
+            <span style="color: var(--primary);">Ressentez demain.</span>
+        </h1>
+        <p class="lead text-muted mb-5">
+            Une interface simple pour envoyer des messages à votre futur vous.
+            Design épuré, sécurité maximale, émotion garantie.
+        </p>
+
+        <div class="d-flex gap-3">
+            <a href="{{ path('app_capsule_new') }}" class="btn btn-gradient btn-lg px-5">
+                Commencer
+            </a>
+            <a href="#how-it-works" class="btn btn-white shadow-sm text-dark px-4 btn-lg">
+                <i class="fas fa-play-circle me-2 text-primary"></i> Démo
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-6 text-center">
+        <div class="soft-card p-5 position-relative">
+            <div class="d-flex justify-content-center align-items-center mb-4">
+                 <div class="spinner-grow text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+            </div>
+            <h3 class="mb-3">Prochain envoi dans...</h3>
+            <div class="d-flex justify-content-center gap-4 mt-4">
+                <div class="text-center">
+                    <div class="h1 fw-bold text-primary mb-0" id="hours">00</div>
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Heures</small>
+                </div>
+                <div class="h1 text-muted">:</div>
+                <div class="text-center">
+                    <div class="h1 fw-bold text-primary mb-0" id="minutes">00</div>
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Minutes</small>
+                </div>
+                <div class="h1 text-muted">:</div>
+                <div class="text-center">
+                    <div class="h1 fw-bold text-secondary mb-0" id="seconds">00</div>
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Secondes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

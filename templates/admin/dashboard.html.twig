@@ -1,67 +1,107 @@
+{# ON ÉTEND LE LAYOUT EASYADMIN (C'est ça qui affiche la sidebar à gauche) #}
 {% extends '@EasyAdmin/page/content.html.twig' %}
 
-{% block content_title %}Tableau de Bord{% endblock %}
+{% block content_title %}Vue d'ensemble{% endblock %}
 
 {% block main %}
-<div class="row">
-    <div class="col-md-6">
-        <div class="card" style="padding: 20px; margin-bottom: 20px;">
-            <h3>📊 État des Capsules</h3>
-            <div style="height: 300px; position: relative;">
-                <canvas id="capsuleChart"></canvas>
+<div class="container-fluid">
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm border-start border-4 border-success h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase text-muted small fw-bold">Reçues</div>
+                        <div class="h2 mb-0 text-success">{{ capsules_sent }}</div>
+                    </div>
+                    <i class="fas fa-check-circle fa-2x text-success opacity-50"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm border-start border-4 border-warning h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase text-muted small fw-bold">En Transit</div>
+                        <div class="h2 mb-0 text-warning">{{ capsules_wait }}</div>
+                    </div>
+                    <i class="fas fa-hourglass-half fa-2x text-warning opacity-50"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm border-start border-4 border-primary h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase text-muted small fw-bold">Membres</div>
+                        <div class="h2 mb-0 text-primary">{{ users_verified }}</div>
+                    </div>
+                    <i class="fas fa-users fa-2x text-primary opacity-50"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm border-start border-4 border-dark h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-uppercase text-muted small fw-bold">Total</div>
+                        <div class="h2 mb-0 text-dark">{{ capsules_sent + capsules_wait }}</div>
+                    </div>
+                    <i class="fas fa-database fa-2x text-dark opacity-50"></i>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="card" style="padding: 20px; margin-bottom: 20px;">
-            <h3>👥 État des Utilisateurs</h3>
-            <div style="height: 300px; position: relative;">
-                <canvas id="userChart"></canvas>
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold">Répartition des Missions</div>
+                <div class="card-body">
+                    <canvas id="capsulesChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold">État des Utilisateurs</div>
+                <div class="card-body">
+                    <canvas id="usersChart" style="max-height: 300px;"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-    // --- GRAPHIQUE 1 : CAPSULES ---
-    const ctxCapsule = document.getElementById('capsuleChart');
-    new Chart(ctxCapsule, {
-        type: 'bar',
-        data: {
-            labels: ['Envoyées', 'En attente'],
-            datasets: [{
-                label: 'Nombre de Capsules',
-                data: [{{ capsules_sent }}, {{ capsules_wait }}],
-                backgroundColor: ['#36A2EB', '#FFCE56']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false, // 👈 IMPORTANT : Permet d'écraser le graph pour qu'il rentre dans les 300px
-            scales: { y: { beginAtZero: true } }
-        }
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx1 = document.getElementById('capsulesChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['Envoyées', 'En attente'],
+                datasets: [{
+                    data: [{{ capsules_sent }}, {{ capsules_wait }}],
+                    backgroundColor: ['#198754', '#ffc107']
+                }]
+            }
+        });
 
-    // --- GRAPHIQUE 2 : UTILISATEURS ---
-    const ctxUser = document.getElementById('userChart');
-    new Chart(ctxUser, {
-        type: 'doughnut',
-        data: {
-            labels: ['Vérifiés', 'Non Vérifiés'],
-            datasets: [{
-                label: 'Utilisateurs',
-                data: [{{ users_verified }}, {{ users_unverified }}],
-                backgroundColor: ['#4BC0C0', '#FF6384'],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false // 👈 C'est ça qui empêche le rond de devenir géant !
-        }
+        const ctx2 = document.getElementById('usersChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'pie',
+            data: {
+                labels: ['Vérifiés', 'Non Vérifiés'],
+                datasets: [{
+                    data: [{{ users_verified }}, {{ users_unverified }}],
+                    backgroundColor: ['#0d6efd', '#6c757d']
+                }]
+            }
+        });
     });
 </script>
 {% endblock %}

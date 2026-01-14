@@ -1,65 +1,97 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Capsule{% endblock %}
+{% block title %}Capsule #{{ capsule.id }}{% endblock %}
 
 {% block body %}
-<div class="container mt-4">
-    <h1>🔎 Détails de la Capsule</h1>
+<div class="row justify-content-center">
+    <div class="col-lg-9">
 
-    <table class="table table-bordered mt-3">
-        <tbody>
-            <tr>
-                <th style="width: 200px;">Titre</th>
-                <td>{{ capsule.title }}</td>
-            </tr>
-            <tr>
-                <th>Message</th>
-                <td>{{ capsule.content|nl2br }}</td>
-            </tr>
-            <tr>
-                <th>Date d'ouverture</th>
-                <td>{{ capsule.sendDate ? capsule.sendDate|date('d/m/Y H:i') : '' }}</td>
-            </tr>
-            <tr>
-                <th>Destinataire</th>
-                <td>{{ capsule.targetEmail }}</td>
-            </tr>
-            <tr>
-                <th>Statut</th>
-                <td>
-                    {% if capsule.isSent %}
-                        <span class="badge bg-success">Envoyée</span>
-                    {% else %}
-                        <span class="badge bg-secondary">En attente</span>
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <th>Image Souvenir</th>
-                <td>
+        <div class="mb-4">
+            <a href="{{ path('app_capsule_index') }}" class="btn btn-light rounded-pill px-4 text-muted fw-bold">
+                <i class="fas fa-arrow-left me-2"></i> Retour
+            </a>
+        </div>
+
+        <div class="soft-card overflow-hidden">
+            <div class="bg-primary p-5 text-white position-relative overflow-hidden">
+                <i class="fas fa-hourglass-end position-absolute top-50 end-0 translate-middle-y opacity-25" style="font-size: 10rem; margin-right: -2rem;"></i>
+
+                <div class="position-relative z-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge bg-white text-primary mb-2 px-3 py-2 rounded-pill fw-bold">
+                                {% if capsule.isSent %}
+                                    <i class="fas fa-check-circle me-1"></i> REÇU
+                                {% else %}
+                                    <i class="fas fa-lock me-1"></i> VERROUILLÉ
+                                {% endif %}
+                            </span>
+                            <h1 class="fw-bold mb-0">{{ capsule.title }}</h1>
+                        </div>
+
+                        <div class="text-end">
+                            <small class="d-block opacity-75 text-uppercase fw-bold ls-1">Date d'ouverture</small>
+                            <span class="fs-4 fw-bold">{{ capsule.sendDate ? capsule.sendDate|date('d M Y') : '' }}</span>
+                            <small class="d-block">{{ capsule.sendDate ? capsule.sendDate|date('H:i') : '' }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-5">
+                <div class="row">
+                    <div class="col-md-{{ capsule.imageFilename ? '7' : '12' }}">
+                        <h5 class="text-muted text-uppercase small fw-bold mb-3">Contenu du message</h5>
+                        <div class="fs-5 lh-lg text-secondary">
+                            {{ capsule.content|nl2br }}
+                        </div>
+
+                        <hr class="my-5 opacity-10">
+
+                        <div class="d-flex align-items-center gap-3 text-muted small">
+                            <div><i class="fas fa-calendar-plus me-2"></i>Créé le {{ capsule.createdAt ? capsule.createdAt|date('d/m/Y') : '' }}</div>
+                            <div>|</div>
+                            <div><i class="fas fa-envelope me-2"></i>Pour : {{ capsule.targetEmail }}</div>
+                        </div>
+                    </div>
+
                     {% if capsule.imageFilename %}
-                        <img src="{{ asset('uploads/' ~ capsule.imageFilename) }}"
-                             alt="Souvenir"
-                             class="img-fluid rounded shadow"
-                             style="max-width: 400px;">
-                    {% else %}
-                        <span class="text-muted">Aucune image jointe.</span>
+                    <div class="col-md-5">
+                        <div class="p-2 bg-light border rounded-3 rotate-image-container">
+                            <img src="{{ asset('uploads/' ~ capsule.imageFilename) }}" class="img-fluid rounded shadow-sm" alt="Souvenir">
+
+                            <div class="text-center mt-2 font-monospace small text-muted">Preuve Visuelle</div>
+                        </div>
+                    </div>
                     {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <th>Créée le</th>
-                <td>{{ capsule.createdAt ? capsule.createdAt|date('d/m/Y H:i') : '' }}</td>
-            </tr>
-        </tbody>
-    </table>
+                </div>
+            </div>
 
-    <div class="mt-3">
-        <a href="{{ path('app_capsule_index') }}" class="btn btn-secondary">Retour à la liste</a>
-
-        {% if not capsule.isSent %}
-            <a href="{{ path('app_capsule_edit', {'id': capsule.id}) }}" class="btn btn-warning">Modifier</a>
-        {% endif %}
+            <div class="bg-light p-4 border-top d-flex justify-content-end gap-2">
+                {% if not capsule.isSent %}
+                    <a href="{{ path('app_capsule_edit', {'id': capsule.id}) }}" class="btn btn-outline-primary px-4 rounded-pill fw-bold">
+                        <i class="fas fa-edit me-2"></i> Modifier
+                    </a>
+                    {{ include('capsule/_delete_form.html.twig') }}
+                {% else %}
+                    <button class="btn btn-success disabled rounded-pill px-4">
+                        <i class="fas fa-check-double me-2"></i> Archivé
+                    </button>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
+
+{% if capsule.imageFilename %}
+<style>
+    .rotate-image-container {
+        transform: rotate(2deg);
+        transition: transform 0.3s;
+    }
+    .rotate-image-container:hover {
+        transform: rotate(0deg) scale(1.02);
+    }
+</style>
+{% endif %}
 {% endblock %}

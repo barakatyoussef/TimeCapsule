@@ -37,7 +37,9 @@ class CapsuleCrudController extends AbstractCrudController
         yield TextField::new('title', 'Titre');
 
         // ✅ CORRECTION DATE : On utilise le bon nom 'sendDate'
-        yield DateTimeField::new('sendDate', 'Date d\'envoi');
+        yield DateTimeField::new('createdAt', 'Date de création')
+        ->setFormat('dd/MM/yyyy HH:mm') // On force le format jour/mois/année
+        ->renderAsChoice(false);
 
         // ✅ CORRECTION MESSAGE : On utilise 'content' (même si on ne l'affiche pas, c'est pour être propre)
         // Mais comme tu ne veux rien voir, on n'a même pas besoin de mettre les champs Image ou Content ici !

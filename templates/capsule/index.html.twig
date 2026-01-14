@@ -1,116 +1,139 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Mes Time Capsules{% endblock %}
+{% block title %}Mes Capsules{% endblock %}
 
 {% block body %}
-<div class="container mt-4">
-    <h1>🎁 Mes Capsules Temporelles</h1>
 
-    {# LE VIDEUR : On vérifie si l'utilisateur a confirmé son email #}
-    {% if app.user and not app.user.isVerified %}
+{# 1. CALCULS LOGIQUES #}
+{% set next_capsule = null %}
+{% set min_diff = 99999999999 %}
+{% set now = date() %}
+{% set count_today = 0 %}
 
-        <div class="alert alert-warning text-center mt-5">
-            <h4>📧 Vérification requise !</h4>
-            <p>Merci de votre inscription.</p>
-            <p>Pour voir et créer des capsules, vous devez d'abord <strong>cliquer sur le lien</strong> reçu par email.</p>
-            <p class="small text-muted">Vérifiez vos spams si vous ne voyez rien.</p>
-        </div>
+{% for c in capsules %}
+    {% if c.createdAt|date('Y-m-d') == now|date('Y-m-d') %}
+        {% set count_today = count_today + 1 %}
+    {% endif %}
 
-    {% else %}
+    {% if not c.isSent and c.sendDate > now %}
+        {% set diff = c.sendDate.timestamp - now.timestamp %}
+        {% if diff < min_diff %}
+            {% set min_diff = diff %}
+            {% set next_capsule = c %}
+        {% endif %}
+    {% endif %}
+{% endfor %}
 
-        {# ======================================================= #}
-        {# 1. LE DASHBOARD (Compte à rebours) - MAINTENANT ICI !   #}
-        {# ======================================================= #}
-        {% if nextCapsule %}
-            <div class="card mb-4 border-primary shadow-sm mt-4">
-                <div class="card-body text-center bg-light">
-                    <h4 class="text-primary"><i class="fas fa-hourglass-half"></i> Prochain Voyage Temporel</h4>
+{# 2. LE COMPTEUR (Compact) #}
+{% if next_capsule %}
+<div class="row justify-content-center mb-5">
+    <div class="col-lg-8 col-md-10">
+        <div class="card border-primary shadow-sm text-center position-relative overflow-hidden" style="border-width: 1px; border-radius: 20px;">
+            <div class="position-absolute top-0 start-0 w-100 bg-primary" style="height: 4px;"></div>
+            <div class="card-body p-4">
+                <div class="d-flex flex-column flex-sm-row justify-content-center align-items-center gap-2 mb-3">
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold">
+                        <i class="fas fa-paper-plane me-2"></i> Prochain Envoi
+                    </span>
+                    <span class="text-muted small">Pour : <strong>{{ next_capsule.targetEmail }}</strong></span>
+                </div>
 
-                    <p class="lead mt-3">
-                        La capsule <strong>"{{ nextCapsule.title }}"</strong> décollera vers
-                        <em>{{ nextCapsule.targetEmail }}</em> le :
-                    </p>
+                <h2 class="fw-bold text-dark mb-3">
+                    {{ next_capsule.sendDate|date('d/m/Y') }} <span class="text-muted fw-light">à</span> {{ next_capsule.sendDate|date('H:i') }}
+                </h2>
 
-                    <div class="display-6 fw-bold text-dark">
-                        {{ nextCapsule.sendDate|date('d/m/Y') }} à {{ nextCapsule.sendDate|date('H:i') }}
-                    </div>
-
-                    <p class="text-muted mt-2" id="countdown-text">Calcul du temps restant...</p>
-
-                    <script>
-                        var targetDate = new Date("{{ nextCapsule.sendDate|date('Y-m-d H:i:s') }}").getTime();
-
-                        var x = setInterval(function() {
-                            var now = new Date().getTime();
-                            var distance = targetDate - now;
-
-                            var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-
-                            if (distance < 0) {
-                                clearInterval(x);
-                                document.getElementById("countdown-text").innerHTML = "🚀 Décollage imminent !";
-                            } else {
-                                document.getElementById("countdown-text").innerHTML =
-                                    "⏱️ Décollage dans : " + days + "j " + hours + "h " + minutes + "m ";
-                            }
-                        }, 1000);
-                    </script>
+                <div id="countdown-wrapper" data-target="{{ next_capsule.sendDate|date('Y-m-d H:i:s') }}"
+                     class="d-inline-flex align-items-center gap-2 bg-light px-4 py-2 rounded-pill text-primary fw-bold border border-primary border-opacity-10">
+                    <i class="fas fa-stopwatch"></i> <span id="chrono">Calcul...</span>
                 </div>
             </div>
-        {% endif %}
-        {# ======================================================= #}
-
-
-        {# 2. LE TABLEAU DES CAPSULES #}
-        <div class="text-end mb-3 mt-4">
-            <a href="{{ path('app_capsule_new') }}" class="btn btn-primary">Créer une nouvelle capsule</a>
         </div>
-
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Titre</th>
-                    <th>Date d'envoi</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for capsule in capsules %}
-                <tr>
-                    <td>{{ capsule.title }}</td>
-                    <td>{{ capsule.sendDate ? capsule.sendDate|date('Y-m-d H:i') : '' }}</td>
-                    <td>
-                        {% if capsule.isSent %}
-                            <span class="badge bg-success">Envoyée</span>
-                        {% else %}
-                            <span class="badge bg-secondary">En attente</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ path('app_capsule_show', {'id': capsule.id}) }}" class="btn btn-sm btn-info">Voir</a>
-
-                        {% if not capsule.isSent %}
-                            <a href="{{ path('app_capsule_edit', {'id': capsule.id}) }}" class="btn btn-sm btn-warning">Modifier</a>
-                            <form method="post" action="{{ path('app_capsule_delete', {'id': capsule.id}) }}" style="display: inline-block" onsubmit="return confirm('Vraiment supprimer ?');">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ capsule.id) }}">
-                                <button class="btn btn-sm btn-danger">Supprimer</button>
-                            </form>
-                        {% else %}
-                            <span class="text-muted small">🔒 Verrouillé</span>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center">Vous n'avez aucune capsule pour le moment.</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-
-    {% endif %}
+    </div>
 </div>
+{% endif %}
+
+{# 3. HEADER & QUOTA #}
+<div class="row justify-content-center mb-4">
+    <div class="col-lg-10">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <h3 class="fw-bold mb-0">Mes Capsules</h3>
+            <div class="bg-white px-3 py-2 rounded-pill shadow-sm border d-flex align-items-center gap-3">
+                <small class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem;">Quota Jour</small>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-bold small {{ count_today >= 5 ? 'text-danger' : 'text-primary' }}">{{ count_today }}/5</span>
+                    <div class="progress" style="width: 40px; height: 5px;">
+                        <div class="progress-bar {{ count_today >= 5 ? 'bg-danger' : 'bg-primary' }}" style="width: {{ (count_today/5)*100 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# 4. LA LISTE (Juste le bouton VOIR) #}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="row g-4">
+            {% for capsule in capsules|reverse %}
+                <div class="col-md-6">
+                    <div class="soft-card p-3 p-md-4 h-100 d-flex flex-column position-relative transition-3d">
+
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                           <span class="badge {{ capsule.isSent ? 'bg-success' : 'bg-warning text-dark shadow-sm' }} rounded-pill px-3 fw-bold">
+                                <i class="fas {{ capsule.isSent ? 'fa-check' : 'fa-clock' }} me-1"></i>
+                                 {{ capsule.isSent ? 'Envoyée' : 'En attente' }}
+                            </span>
+                            <small class="text-muted fw-bold" style="font-size: 0.8rem;">
+                                <i class="far fa-calendar me-1"></i> {{ capsule.sendDate|date('d/m/Y') }}
+                            </small>
+                        </div>
+
+                        <h5 class="fw-bold mb-2 text-truncate">{{ capsule.title }}</h5>
+                        <p class="text-muted mb-4 flex-grow-1 text-truncate" style="font-size: 0.9rem;">
+                            {{ capsule.content }}
+                        </p>
+
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                            <div class="text-muted fw-bold small" style="font-size: 0.75rem;">
+                                {% if capsule.imageFilename %}
+                                    <i class="fas fa-image text-primary me-1"></i> Photo
+                                {% else %}
+                                    <i class="fas fa-align-left text-secondary me-1"></i> Texte
+                                {% endif %}
+                            </div>
+
+                            <a href="{{ path('app_capsule_show', {'id': capsule.id}) }}" class="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold">
+                                Voir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <h5 class="text-muted">Rien à l'horizon...</h5>
+                    <a href="{{ path('app_capsule_new') }}" class="btn btn-primary btn-sm rounded-pill mt-3 px-4">Créer</a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const wrapper = document.getElementById('countdown-wrapper');
+        const display = document.getElementById('chrono');
+        if (!wrapper || !display) return;
+        const targetDate = new Date(wrapper.dataset.target).getTime();
+        setInterval(function() {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+            if (distance < 0) { display.innerHTML = "C'est l'heure !"; return; }
+            const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((distance % (1000 * 60)) / 1000);
+            display.innerHTML = d > 0 ? `${d}j ${h}h ${m}m ${s}s` : `${h}h ${m}m ${s}s`;
+        }, 1000);
+    });
+</script>
 {% endblock %}
