@@ -10,6 +10,8 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
         <style>
+            .btn-ghost:hover { background-color: rgba(0,0,0,0.05); color: var(--primary) !important; }
+            .hover-primary:hover { color: var(--primary) !important; }
             :root {
                 --primary: #2563eb;       /* Bleu Roi */
                 --primary-dark: #1d4ed8;
@@ -173,8 +175,15 @@
                             </li>
 
                         {% else %}
-                            <li class="nav-item"><a href="{{ path('app_login') }}" class="nav-link fw-bold text-dark">Se connecter</a></li>
-                            <li class="nav-item"><a href="{{ path('app_register') }}" class="btn btn-primary rounded-pill px-4">Inscription</a></li>
+                            <a href="{{ path('app_login') }}"
+                                class="btn {{ app.request.get('_route') == 'app_login' ? 'btn-primary shadow-sm' : 'btn-ghost text-muted hover-primary' }} rounded-pill px-4 fw-bold transition-3d">
+                                Se connecter
+                            </a>
+
+                            <a href="{{ path('app_register') }}"
+                                class="btn {{ app.request.get('_route') == 'app_register' ? 'btn-primary shadow-sm' : 'btn-light text-primary border' }} rounded-pill px-4 fw-bold transition-3d">
+                                Inscription
+                            </a>
                         {% endif %}
                     </ul>
                 </div>

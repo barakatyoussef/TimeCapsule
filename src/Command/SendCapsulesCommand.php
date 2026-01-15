@@ -12,6 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Address;
 
 #[AsCommand(
     name: 'app:send-capsules',
@@ -31,13 +32,9 @@ class SendCapsulesCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        // 1. Trouver les capsules à envoyer (Date dépassée ET pas encore envoyée)
-        // On cherche tout ce qui est <= à "Maintenant"
         $now = new \DateTimeImmutable();
 
-        // Note: Idéalement, on crée une méthode findDueCapsules dans le Repository,
-        // mais pour faire simple, on filtre ici ou on utilise une requête simple.
-        // Faisons une requête custom rapide :
+        // On cherche les capsules non envoyées dont la date est passée
         $capsules = $this->capsuleRepository->createQueryBuilder('c')
             ->where('c.isSent = :status')
             ->andWhere('c.sendDate <= :now')
@@ -50,63 +47,85 @@ class SendCapsulesCommand extends Command
         $io->section("🔍 Recherche de capsules... $count trouvée(s).");
 
         foreach ($capsules as $capsule) {
-            $io->text("Envoi de la capsule ID " . $capsule->getId() . " vers " . $capsule->getTargetEmail());
+            $io->text("Traitement de la capsule ID " . $capsule->getId());
 
-            // ... dans la boucle foreach ...
+            // --- CORRECTION ICI : On utilise getAuthor() au lieu de getUser() ---
+
+            // On vérifie si un auteur existe (même si ta base dit nullable=false, c'est plus sûr)
+            if ($capsule->getAuthor()) {
+                $senderEmail = $capsule->getAuthor()->getEmail();
+            } else {
+                $senderEmail = 'youssefbarakat892@gmail.com'; // Fallback pour les vieilles données
+            }
+
+            // Ton email Admin (celui du .env)
+            $adminEmail = 'youssefbarakat892@gmail.com';
 
             $email = (new Email())
-                ->from('admin@timecapsule.com')
+                // FROM : Ton mail admin + Nom de l'auteur
+                ->from(new Address($adminEmail, $senderEmail . ' (via TimeCapsule)'))
+
                 ->to($capsule->getTargetEmail())
                 ->subject('⏳ Une capsule temporelle vient de s\'ouvrir !');
 
-            // 1. Préparer le contenu HTML
-            $htmlContent = '
-                <h1>⏳ Time Capsule Arrivée !</h1>
-                <p>Bonjour,</p>
-                <p>Quelqu\'un a voulu vous envoyer un message depuis le passé.</p>
-                <hr>
-                <h3>' . $capsule->getTitle() . '</h3>
-                <p>' . nl2br($capsule->getContent()) . '</p>';
-
-            // 2. Si y a une image, on l'attache physiquement au mail
-            if ($capsule->getImageFilename()) {
-                // Chemin complet sur ton disque (C:/laragon/...)
-                $imagePath = 'public/uploads/' . $capsule->getImageFilename();
-
-                // On donne un ID unique à l'image pour le mail
-                $cid = 'image-capsule-' . $capsule->getId();
-
-                // On l'attache (Embed)
-                $email->embedFromPath($imagePath, $cid);
-
-                // On l'affiche avec "cid:" (Content-ID)
-                $htmlContent .= '<br><img src="cid:' . $cid . '" style="max-width:100%; border-radius:10px;" alt="Souvenir"><br>';
+            // REPLY-TO : Si on a un auteur, on met son email
+            if ($capsule->getAuthor()) {
+                $email->replyTo($senderEmail);
             }
 
-            $htmlContent .= '<hr><p><small>Envoyé via TimeCapsule App</small></p>';
+            // --- CONTENU HTML ---
+            $htmlContent = '
+                <div style="font-family: \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 10px; border: 1px solid #e5e7eb;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h1 style="color: #2563eb; margin-bottom: 5px;">⏳ TimeCapsule</h1>
+                        <p style="color: #6b7280; font-size: 14px;">Un message du passé a refait surface.</p>
+                    </div>
 
-            // 3. On injecte le tout
+                    <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        <h2 style="color: #111827; margin-top: 0;">' . htmlspecialchars($capsule->getTitle()) . '</h2>
+                        <p style="font-size: 16px; line-height: 1.6; color: #374151; white-space: pre-wrap;">' . htmlspecialchars($capsule->getContent()) . '</p>
+                    </div>';
+
+            // --- IMAGE ---
+            if ($capsule->getImageFilename()) {
+                $imagePath = 'public/uploads/' . $capsule->getImageFilename();
+
+                if (file_exists($imagePath)) {
+                    $cid = 'image-capsule-' . $capsule->getId();
+                    $email->embedFromPath($imagePath, $cid);
+                    $htmlContent .= '
+                    <div style="margin-top: 20px; text-align: center;">
+                        <img src="cid:' . $cid . '" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);" alt="Souvenir visuel">
+                    </div>';
+                }
+            }
+
+            $htmlContent .= '
+                    <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                    <p style="text-align: center; color: #9ca3af; font-size: 12px;">
+                        Ce message a été écrit par <strong>' . $senderEmail . '</strong> et scellé jusqu\'à aujourd\'hui.
+                        <br>Envoyé via <a href="#" style="color: #2563eb; text-decoration: none;">TimeCapsule App</a>
+                    </p>
+                </div>';
+
             $email->html($htmlContent);
 
-
-            // 4. Envoyer
+            // --- ENVOI ---
             try {
                 $this->mailer->send($email);
 
-                // 4. Marquer comme envoyée
                 $capsule->setIsSent(true);
-                $this->entityManager->persist($capsule); // Sauvegarder le changement d'état
+                // On n'a pas besoin de persist() car l'objet est déjà géré par Doctrine,
+                // mais le flush() à la fin sauvera tout.
 
-                $io->success("Capsule envoyée !");
+                $io->success("Capsule ID " . $capsule->getId() . " envoyée à " . $capsule->getTargetEmail());
             } catch (\Exception $e) {
-                $io->error("Erreur lors de l'envoi : " . $e->getMessage());
+                $io->error("Erreur pour la capsule ID " . $capsule->getId() . " : " . $e->getMessage());
             }
         }
 
-        // Sauvegarder tout en base de données
         $this->entityManager->flush();
-
-        $io->success('Terminé ! Toutes les capsules prêtes ont été envoyées.');
+        $io->success('Terminé ! Toutes les capsules ont été traitées.');
 
         return Command::SUCCESS;
     }

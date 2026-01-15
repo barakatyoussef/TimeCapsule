@@ -1,23 +1,71 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Inscription - TimeCapsule{% endblock %}
 
 {% block body %}
+<div class="container py-5">
+
     {% for flash_error in app.flashes('verify_email_error') %}
-        <div class="alert alert-danger" role="alert">{{ flash_error }}</div>
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 mb-4 shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> {{ flash_error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
     {% endfor %}
 
-    <h1>Register</h1>
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
 
-    {{ form_errors(registrationForm) }}
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="bg-primary p-4 text-center text-white position-relative overflow-hidden">
+                    <div class="position-absolute top-0 start-0 opacity-10 rounded-circle bg-white" style="width: 150px; height: 150px; margin-left: -50px; margin-top: -50px;"></div>
+                    <div class="position-absolute bottom-0 end-0 opacity-10 rounded-circle bg-white" style="width: 100px; height: 100px; margin-right: -20px; margin-bottom: -20px;"></div>
 
-    {{ form_start(registrationForm) }}
-        {{ form_row(registrationForm.email) }}
-        {{ form_row(registrationForm.plainPassword, {
-            label: 'Password'
-        }) }}
-        {{ form_row(registrationForm.agreeTerms) }}
+                    <h3 class="fw-bold mb-1">Bienvenue !</h3>
+                    <p class="mb-0 opacity-75 small">Préparez vos messages pour le futur</p>
+                </div>
 
-        <button type="submit" class="btn">Register</button>
-    {{ form_end(registrationForm) }}
+                <div class="card-body p-4 p-md-5">
+                    {{ form_start(registrationForm) }}
+
+                        <div class="form-floating mb-3">
+                            {{ form_widget(registrationForm.email, {'attr': {'class': 'form-control bg-light border-0 shadow-none', 'placeholder': 'Email'}}) }}
+                            {{ form_label(registrationForm.email, 'Adresse Email') }}
+                            <div class="text-danger small mt-1 ps-1">{{ form_errors(registrationForm.email) }}</div>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            {{ form_widget(registrationForm.plainPassword, {'attr': {'class': 'form-control bg-light border-0 shadow-none', 'placeholder': 'Mot de passe'}}) }}
+                            {{ form_label(registrationForm.plainPassword, 'Mot de passe') }}
+                            <div class="text-danger small mt-1 ps-1">{{ form_errors(registrationForm.plainPassword) }}</div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            {{ form_widget(registrationForm.agreeTerms, {'attr': {'class': 'form-check-input'}}) }}
+                            <label class="form-check-label text-muted small" for="{{ registrationForm.agreeTerms.vars.id }}">
+                                J'accepte les <a href="#" class="text-primary text-decoration-none fw-bold">conditions d'utilisation</a>.
+                            </label>
+                            <div class="text-danger small ps-1">{{ form_errors(registrationForm.agreeTerms) }}</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm mb-3 transition-3d">
+                            <i class="fas fa-envelope me-2"></i> Créer mon compte
+                        </button>
+
+                        <div class="text-center pt-2">
+                            <span class="text-muted small">Déjà un compte ?</span>
+                            <a href="{{ path('app_login') }}" class="fw-bold text-primary text-decoration-none ms-1">Se connecter</a>
+                        </div>
+
+                    {{ form_end(registrationForm) }}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus { box-shadow: none; border: 1px solid var(--primary) !important; background-color: white !important; }
+    .transition-3d:hover { transform: translateY(-2px); }
+</style>
 {% endblock %}
