@@ -32,22 +32,22 @@ L'objectif est de créer une "capsule temporelle numérique".
    ```
 2. **Installer les dépendances**
    ```bash
-     composer install
-     npm install
+   composer install
+   npm install
    ```
 3. **Configuration (.env)**
-   * Dupliquer .env en .env.local et configurer la base de données :
+   Dupliquer .env en .env.local et configurer la base de données :
    ```bash
-       DATABASE_URL="mysql://root:@127.0.0.1:3306/timecapsule_db"
-       MAILER_DSN=smtp://user:pass@smtp.example.com
+   DATABASE_URL="mysql://root:@127.0.0.1:3306/timecapsule_db"
+   MAILER_DSN=smtp://user:pass@smtp.example.com
    ```
 4. **Base de données**
    ```bash
-       php bin/console doctrine:database:create
-       php bin/console doctrine:migrations:migrate
+   php bin/console doctrine:database:create
+   php bin/console doctrine:migrations:migrate
    ```
 5. **Lancer le serveur**
    ```bash
-       symfony server:start
+   symfony server:start
    ```
    
