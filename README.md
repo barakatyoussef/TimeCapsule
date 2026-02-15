@@ -23,32 +23,34 @@ L'objectif est de créer une "capsule temporelle numérique".
 * **Frontend :** Twig, Bootstrap 5
 * **Base de données :** MySQL
 
-## 🚀 Installation
+## 🚀 Installation & Configuration
 
-1. **Cloner le projet**
-   ```bash
-   git clone [https://github.com/barakatyoussef/TimeCapsule.git](https://github.com/barakatyoussef/TimeCapsule.git)
-   cd TimeCapsule
-   ```
-2. **Installer les dépendances**
-   ```bash
-   composer install
-   npm install
-   ```
-3. **Configuration (.env)**
-   Dupliquer .env en .env.local et configurer la base de données :
-   
-   ```env
-   DATABASE_URL="mysql://root:@127.0.0.1:3306/timecapsule_db"
-   MAILER_DSN=smtp://user:pass@smtp.example.com
-   ```
-5. **Base de données**
-   ```bash
-   php bin/console doctrine:database:create
-   php bin/console doctrine:migrations:migrate
-   ```
-6. **Lancer le serveur**
-   ```bash
-   symfony server:start
-   ```
+Avant de commencer, assurez-vous d'avoir **PHP**, **Composer** et **Node.js** installés.
+
+### 1. Cloner le projet
+```bash
+git clone [https://github.com/barakatyoussef/TimeCapsule.git](https://github.com/barakatyoussef/TimeCapsule.git)
+cd TimeCapsule
+```
+### 2. Installer les dépendances
+Installez les librairies Backend (Symfony) et Frontend (Assets) :
+```bash
+composer install
+npm install
+```
+### 3. Configuration (.env)
+Dupliquer .env en .env.local et configurer la base de données :
+```env
+DATABASE_URL="mysql://root:@127.0.0.1:3306/timecapsule_db"
+MAILER_DSN=smtp://user:pass@smtp.example.com
+```
+### 4. Base de données
+```bash
+php bin/console doctrine:database:create
+php bin/console doctrine:migrations:migrate
+```
+### 5. Lancer le serveur
+```bash
+symfony server:start
+```
    
