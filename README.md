@@ -58,4 +58,4 @@ symfony server:start
 | Membre | Rôle Principal | Liens |
 | :--- | :--- | :--- |
 | **Youssef Barakat** | **Lead Developer** (Backend Logic, API, Database) | [GitHub](https://github.com/barakatyoussef) |
-| **Imad Rachid** | **Developer** (Conception UML, Frontend UI & Tests,Documentation) | [GitHub](https://github.com/Rachid-Imad) |
+| **Imad Rachid** | **Developer** (Conception UML, Frontend UI & Tests, Documentation) | [GitHub](https://github.com/Rachid-Imad) |
