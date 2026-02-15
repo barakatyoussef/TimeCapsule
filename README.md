@@ -37,16 +37,17 @@ L'objectif est de créer une "capsule temporelle numérique".
    ```
 3. **Configuration (.env)**
    Dupliquer .env en .env.local et configurer la base de données :
-   ```bash
+   
+   ```env
    DATABASE_URL="mysql://root:@127.0.0.1:3306/timecapsule_db"
    MAILER_DSN=smtp://user:pass@smtp.example.com
    ```
-4. **Base de données**
+5. **Base de données**
    ```bash
    php bin/console doctrine:database:create
    php bin/console doctrine:migrations:migrate
    ```
-5. **Lancer le serveur**
+6. **Lancer le serveur**
    ```bash
    symfony server:start
    ```
